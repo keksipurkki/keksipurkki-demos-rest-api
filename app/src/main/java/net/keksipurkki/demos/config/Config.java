@@ -34,20 +34,23 @@ public class Config {
   }
 
   @Bean
-  public OpenAPI openAPI() {
-    var yamlFile = new FileSystemResource("api.yaml");
+  public FileSystemResource openApiYaml() {
+    return new FileSystemResource("api.yaml");
+  }
 
+  @Bean
+  public OpenAPI openAPI(FileSystemResource openApiYaml) {
     try {
-      var yaml = yamlFile.getContentAsString(StandardCharsets.UTF_8);
+      var yaml = openApiYaml.getContentAsString(StandardCharsets.UTF_8);
       var docs = ApiContract.openApi(yaml);
       var version = this.env.getProperty("maven.project.version", docs.getInfo().getVersion());
-      logger.info("Read OpenAPI specification from {}. Version = {}", yamlFile.getPath(), version);
+      logger.info("Read OpenAPI specification from {}. Version = {}", openApiYaml.getPath(), version);
 
       docs.getInfo().setVersion(version);
       return docs;
 
     } catch (IOException cause) {
-      throw new IllegalStateException("Failed to read API docs from " + yamlFile.getPath(), cause);
+      throw new IllegalStateException("Failed to read API docs from " + openApiYaml.getPath(), cause);
     }
   }
 

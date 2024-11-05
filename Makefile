@@ -9,5 +9,11 @@ build: app/target/app.jar
 build-native: app/target/app.jar
 	docker build -t $(IMAGE_NAME) -f docker/Dockerfile.native --build-arg APP_JAR=$< .
 
+run:
+	docker run -p 8080:8080 $(IMAGE_NAME)
+
 clean:
+	mvn clean -pl app
+
+dist-clean:
 	mvn clean
