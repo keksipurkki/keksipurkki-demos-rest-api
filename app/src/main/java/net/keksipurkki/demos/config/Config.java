@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
@@ -21,55 +21,55 @@ import java.util.TimeZone;
 @Configuration
 public class Config {
 
-    private static final int JSON_PARSE_MAX_STRING_LENGTH = 1_000_000; // Harden from 20 MB default
-    private static final int JSON_PARSE_MAX_NUMBER_LENGTH = StreamReadConstraints.DEFAULT_MAX_NUM_LEN;
-    private static final int JSON_PARSE_MAX_DEPTH = StreamReadConstraints.DEFAULT_MAX_DEPTH;
+  private static final int JSON_PARSE_MAX_STRING_LENGTH = 1_000_000; // Harden from 20 MB default
+  private static final int JSON_PARSE_MAX_NUMBER_LENGTH = StreamReadConstraints.DEFAULT_MAX_NUM_LEN;
+  private static final int JSON_PARSE_MAX_DEPTH = StreamReadConstraints.DEFAULT_MAX_DEPTH;
 
-    private final Environment env;
+  private final Environment env;
 
-    private final Logger logger = LoggerFactory.getLogger(Config.class);
+  private final Logger logger = LoggerFactory.getLogger(Config.class);
 
-    Config(Environment env) {
-        this.env = env;
+  public Config(Environment env) {
+    this.env = env;
+  }
+
+  @Bean
+  public OpenAPI openAPI() {
+    var yamlFile = new FileSystemResource("api.yaml");
+
+    try {
+      var yaml = yamlFile.getContentAsString(StandardCharsets.UTF_8);
+      var docs = ApiContract.openApi(yaml);
+      var version = this.env.getProperty("maven.project.version", docs.getInfo().getVersion());
+      logger.info("Read OpenAPI specification from {}. Version = {}", yamlFile.getPath(), version);
+
+      docs.getInfo().setVersion(version);
+      return docs;
+
+    } catch (IOException cause) {
+      throw new IllegalStateException("Failed to read API docs from " + yamlFile.getPath(), cause);
     }
+  }
 
-    @Bean
-    public OpenAPI openAPI() {
-        var yamlFile = new ClassPathResource("api.yaml");
+  @Bean
+  public MappingJackson2HttpMessageConverter httpMessageConverter(ObjectMapper mapper) {
+    var factory = mapper.getFactory().copy();
 
-        try {
-            var yaml = yamlFile.getContentAsString(StandardCharsets.UTF_8);
-            var docs = ApiContract.openApi(yaml);
-            var version = this.env.getProperty("maven.project.version", docs.getInfo().getVersion());
-            logger.info("Read OpenAPI specification from {}. Version = {}", yamlFile.getPath(), version);
+    var constraints = StreamReadConstraints.builder()
+      .maxStringLength(JSON_PARSE_MAX_STRING_LENGTH)
+      .maxNumberLength(JSON_PARSE_MAX_NUMBER_LENGTH)
+      .maxNestingDepth(JSON_PARSE_MAX_DEPTH);
 
-            docs.getInfo().setVersion(version);
-            return docs;
+    factory.setStreamReadConstraints(constraints.build());
 
-        } catch (IOException cause) {
-            throw new IllegalStateException("Failed to read API docs from " + yamlFile.getPath(), cause);
-        }
-    }
+    var builder = new Jackson2ObjectMapperBuilder();
 
-    @Bean
-    public MappingJackson2HttpMessageConverter httpMessageConverter(ObjectMapper mapper) {
-        var factory = mapper.getFactory().copy();
+    builder.failOnUnknownProperties(false)
+      .serializationInclusion(JsonInclude.Include.NON_NULL)
+      .timeZone(TimeZone.getTimeZone("Europe/Helsinki")) // Always report time in Helsinki time in API responses
+      .factory(factory);
 
-        var constraints = StreamReadConstraints.builder()
-            .maxStringLength(JSON_PARSE_MAX_STRING_LENGTH)
-            .maxNumberLength(JSON_PARSE_MAX_NUMBER_LENGTH)
-            .maxNestingDepth(JSON_PARSE_MAX_DEPTH);
-
-        factory.setStreamReadConstraints(constraints.build());
-
-        var builder = new Jackson2ObjectMapperBuilder();
-
-        builder.failOnUnknownProperties(false)
-            .serializationInclusion(JsonInclude.Include.NON_NULL)
-            .timeZone(TimeZone.getTimeZone("Europe/Helsinki")) // Always report time in Helsinki time in API responses
-            .factory(factory);
-
-        return new MappingJackson2HttpMessageConverter(builder.build());
-    }
+    return new MappingJackson2HttpMessageConverter(builder.build());
+  }
 
 }
