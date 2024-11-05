@@ -1,0 +1,34 @@
+openapi: 3.0.1
+info:
+  title: My little REST API
+  description: |
+    An opinionated way of programming REST APIs
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  variables: {}
+paths:
+  /hello:
+    get:
+      description: |
+        A description for this operation
+      operationId: GET_GREETING
+      parameters:
+      - in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+components:
+  schemas:
+    HelloResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      description: An example description for an API response

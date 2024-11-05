@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.keksipurkki</groupId>
+    <artifactId>keksipurkki-demos-rest-api</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>acceptance</artifactId>
+
+  <properties>
+    <maven.compiler.release>23</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <cucumber.version>7.20.1</cucumber.version>
+    <junit.version>5.11.3</junit.version>
+    <app.sut>http://localhost:8080/api/v1</app.sut>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-bom</artifactId>
+        <version>${cucumber.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Cucumber -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-picocontainer</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+    </dependency>
+
+    <!-- JUnit & Hamcrest -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>2.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite-engine</artifactId>
+      <version>1.10.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- HTTP Requests -->
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>5.4.0</version>
+    </dependency>
+
+    <!-- Misc -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.18.1</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>2.2.25</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <!-- Pass value from Maven build context to Java runtime context -->
+        <configuration>
+          <systemPropertyVariables>
+            <app.sut>${app.sut}</app.sut>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.swagger.codegen.v3</groupId>
+        <artifactId>swagger-codegen-maven-plugin</artifactId>
+        <version>3.0.63</version>
+        <executions>
+          <execution>
+            <id>api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <language>java</language>
+              <inputSpec>${app.sut}/api-docs.json</inputSpec>
+              <library>jersey2</library>
+              <generateModels>true</generateModels>
+              <generateApis>false</generateApis>
+              <modelPackage>net.keksipurkki.demos.api</modelPackage>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <configOptions>
+                <dateLibrary>java8-instant</dateLibrary>
+                <java8>true</java8>
+                <bigDecimalAsString>true</bigDecimalAsString>
+                <useBeanValidation>false</useBeanValidation>
+              </configOptions>
+              <addCompileSourceRoot>true</addCompileSourceRoot>
+            </configuration>
+          </execution>
+        </executions>
+
+      </plugin>
+    </plugins>
+
+  </build>
+
+</project>
