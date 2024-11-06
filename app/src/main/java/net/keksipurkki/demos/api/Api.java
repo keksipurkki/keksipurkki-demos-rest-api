@@ -1,5 +1,7 @@
 package net.keksipurkki.demos.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import net.keksipurkki.demos.api.schema.HelloResponse;
 import net.keksipurkki.demos.config.Config;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+
 @RestController
 public class Api implements ApiContract {
 
@@ -21,9 +25,9 @@ public class Api implements ApiContract {
     this.openAPI = openAPI;
   }
 
-  @GetMapping(value = "/api-docs.json")
-  public OpenAPI apiDocumentation() {
-    return openAPI;
+  @GetMapping(value = "/api-docs.json", produces = APPLICATION_JSON)
+  public String apiDocumentation() throws JsonProcessingException {
+    return Json.mapper().writer().writeValueAsString(openAPI);
   }
 
   @Override
